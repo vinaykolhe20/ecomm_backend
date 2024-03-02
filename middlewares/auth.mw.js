@@ -1,5 +1,7 @@
 
 const user_model=require("../models/user.model")
+const jwt=require("jsonwebtoken")
+const auth_config=require("../configs/auth.config")
 /**
  * create a mw will check if the 
  */
@@ -53,7 +55,48 @@ const verifySignInBody=async(req,res,next)=>{
     }        
     next()
 }
+const verifyToken=(req,res,next)=>{
+    //check if the token is present in the header
+    const token=req.headers['x-access-token'] //if in the header 
+    if(!token){
+        return res.status(403).send({
+            message:"No token Found : Unauthorized"
+        })
+    }
+    //If it's the valid token
+    jwt.verify(token, auth_config.secret,async(err,decoded)=>{
+        if(err){
+            return res.status(401).send({
+                message:"Unauthorized !"
+            })
+        }
+        const user=await user_model.findOne({userId:decoded.id})
+        if(!user){
+            return res.status(400).send({
+                message:"Unauthorized , this user for this token doesn't exist"
+            })
+        }
+        //Set the user info in the req body
+        req.user=user
+        next()
+    })
+    
+    //then move to the next step
+
+}
+const isAdmin=(req,res,next)=>{
+    const user=req.user
+    if(user && user.userType=="ADMIN"){
+        next() //next means go ahead all is good and here it means that user is a ADMIN
+    }else{
+        return res.status(403).send({
+            messsage:"You are not Authorized to use this function : Only ADMIN Can "
+        })
+    }
+}
 module.exports = {
     verifySignUpBody:verifySignUpBody,
-    verifySignInBody:verifySignInBody
+    verifySignInBody:verifySignInBody,
+    verifyToken:verifyToken,
+    isAdmin:isAdmin
 }
