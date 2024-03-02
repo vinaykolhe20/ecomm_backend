@@ -50,20 +50,22 @@ exports.delprod=async(req,res)=>{
 }
 
 exports.editProduct=async(req,res)=>{
+    console.log("Received PUT request for product ID:", req.params.id)
     const productId=req.params.id
     const updateData={
+        
         name:req.body.name,
         price:req.body.price,
         description:req.body.description
-    };
+    }
     try{
-        const updateProduct=await prod_model.findByIdAndUpdate(productId,updateData)
+        const updateProduct=await prod_model.findByIdAndUpdate(productId,updateData,{new:true})
         if(!updateProduct){
             return res.status(404).send({
                 message:"Product not Found"
             })
         }
-        return res.status(200),send(updateProduct)
+        return res.status(200).send(updateProduct)
 
     }
     catch(err){
